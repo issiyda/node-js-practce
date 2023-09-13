@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  api:
+    container_name: todoApi
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    depends_on:
+      - db
+    ports:
+      - 8000:8000
+    environment:
+      - SERVER_PORT=${SERVER_PORT}
+    volumes:
+      - ./:/app
+      - /app/node_modules # コンテナ内でnode_modulesを管理するために必要
+    networks:
+      - app
+
+  db:
+    container_name: todoDb
+    image: mysql:8.0.32
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - 3308:3306
+    environment:
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    volumes:
+      - mysql:/var/lib/mysql
+      # Prisma用にDBユーザー権限を付与する処理を実行（https://polidog.jp/2023/05/03/prisma-mysql/）
+      - ./docker/mysql/1_init.sh:/docker-entrypoint-initdb.d/1_init.sh
+    networks:
+      - app
+
+volumes:
+  mysql:
+
+networks:
+  app:
